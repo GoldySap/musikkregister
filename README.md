@@ -1,7 +1,10 @@
 #Musikkregister
 nødvendig bibliotek:
+
 Mariadb kommando: `pip install mariadb`
+
 Dotenv kommando:  `pip install mariadb`
+
 Readchar kommando: `pip install mariadb`
 
 Artist tabellen:
