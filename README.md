@@ -1,4 +1,18 @@
 #Musikkregister
+nødvendig bibliotek:
+Mariadb kommando: `pip install mariadb`
+Dotenv kommando:  `pip install mariadb`
+Readchar kommando: `pip install mariadb`
+
+Tabelene som blir skapt:
+song:
+| id | songname | artistid |
+| -- |:---------------:|--:|
+| 1 | High way to hell | 1 |
+| 3 | High way to hell | 1 |
+| 2 | High way to hell | 2 |
+
+Kode:
 ```python
 import dotenv
 import os
