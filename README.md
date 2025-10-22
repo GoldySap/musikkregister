@@ -4,13 +4,18 @@ Mariadb kommando: `pip install mariadb`
 Dotenv kommando:  `pip install mariadb`
 Readchar kommando: `pip install mariadb`
 
-Tabelene som blir skapt:
-song:
+Artist tabellen:
+| id | artistnavn |
+| -- |:---------------:|
+| 1 | ACDC |
+| 2 | The ink spots |
+
+Song tabellen:
 | id | songname | artistid |
 | -- |:---------------:|--:|
 | 1 | High way to hell | 1 |
-| 3 | High way to hell | 1 |
-| 2 | High way to hell | 2 |
+| 2 | We'll meet again | 2 |
+| 3 | If i didn't care | 2 |
 
 Kode:
 ```python
