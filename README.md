@@ -1,11 +1,22 @@
 #Musikkregister
-nødvendig bibliotek:
 
-Mariadb kommando: `pip install mariadb`
+For dette prosjektet skulle jeg lage en musikkregister database. For å gjøre dette brukte jeg disse nødvendige bibliotekene:
 
-Dotenv kommando:  `pip install mariadb`
+1. **Mariadb**
+  
+    Kommando for installasjons som brukes i bash terminalen: `pip install mariadb`
 
-Readchar kommando: `pip install mariadb`
+2. **Dotenv**
+  
+   Kommando for installasjons som brukes i bash terminalen:  `pip install mariadb`
+
+3. **Readchar**
+  
+   Kommando for installasjons som brukes i bash terminalen: `pip install mariadb`
+
+På oppstart av `musikkregister.py` filen så skal den skjekke om du kan koble til mariadb, skjekke om databasen er tilgjengelig, opprette databasen hvis den ikke er tilgjengelig, skjekke om tabellene er tilgjengelig og lager tabellene hvi de ikke er tilgjengelig.
+
+Tabellene
 
 Artist tabellen:
 | id | artistnavn |
