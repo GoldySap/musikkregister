@@ -99,12 +99,12 @@ def tablecheck(mycursor, db, envtables, envtablecontent, mydb):
     print(f"Tables for {mydb.database}:", temp)
 
 def testinsert(mycursor, mydb, envtables, mariadb):
-  testval = [
+  val = [
               ("", ""),
               ("", ""),
               ("", ""),
             ]
-  print("Test values:", testval)
+  print("Test values:", val)
   inp = input("Insert test values? y/n ")
   if inp.lower() == "y":
       try:
