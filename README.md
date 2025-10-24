@@ -1,14 +1,31 @@
-#Musikkregister
+# Musikkregister
 
-For dette prosjektet skulle jeg lage en musikkregister database. For å gjøre dette brukte jeg disse nødvendige bibliotekene:
+## Refleksjon og forklaring
 
-1. **Mariadb**
+---
 
-2. **Dotenv**
+### Reflesksjon
 
-3. **Readchar**
+I dette prosjektet ble vi testet i vår forståelse og kunskap innenfor databaser med mariadb, mysql.connector og koding med Python.
+Jeg syntes the var en interresang og vanskelig oppgave som lot meg utforske å lære mye om hvordan man kan automatisere databaser med kode.
+
+Det jeg angrer på mest er at jeg brukte litt lang tid på å kode systemet og tenkte ikke så mye på å ta bilder underveis.
+
+---
+
+### Forklaring
+
+Prosjektet var å lage en database, automatisere opprettelsen av tabeller og gi brukeren en meny som kan utføre forskjellige ting. Med menyen skal brukeren kunne legge til data i tabelene, se dataen, endre på existerende data og slette data.
+
+For å lage koden som kunne oppnå alt dette på en enkel måte brukte jeg disse nødvendige bibliotekene:
+
+1. **Mariadb** for databasen
+
+2. **Dotenv** for å hente .env filens verdier. For eksempel brukernavn og passord.
+
+3. **Readchar** for å få automatisk enter, som at når du trykker for eksempel 1 så automatisk får den signalet å går vidre.
   
-Kommando for installasjons som brukes i bash terminalen:
+Kommando for installasjonen av bibliotekene som brukes i bash terminalen:
 
 `pip install mariadb`
 
@@ -16,24 +33,34 @@ Kommando for installasjons som brukes i bash terminalen:
 
 `pip install Readchar`
 
-På oppstart av `musikkregister.py` filen så skal den skjekke om du kan koble til mariadb, skjekke om databasen er tilgjengelig, opprette databasen hvis den ikke er tilgjengelig, skjekke om tabellene er tilgjengelig og lager tabellene hvi de ikke er tilgjengelig.
 
-Tabellene
+På oppstart av `musikkregister.py` filen så skal den skjekke om du kan koble til mariadb og skjekke om databasen er tilgjengelig. 
 
-Artist tabellen:
-| id | artistnavn |
-| -- |:---------------:|
-| 1 | ACDC |
-| 2 | The ink spots |
+Hvis databasen ikke er tilgjengelig oppretter den databasen, så skjekke om tabellene er tilgjengelig og hvis ikke så lager den tabellene. Etter det så spør den om du vil legge til test verdiene som kan bare bli lagdt in hvis tabelene er tomme.
 
-Song tabellen:
-| id | songname | artistid |
-| -- |:---------------:|--:|
-| 1 | High way to hell | 1 |
-| 2 | We'll meet again | 2 |
-| 3 | If i didn't care | 2 |
+<img width="1512" height="683" alt="image" src="https://github.com/user-attachments/assets/1401197a-de49-40f0-aa15-389371ef828d" />
 
-Kode:
+<img width="227" height="262" alt="image" src="https://github.com/user-attachments/assets/e5176dc2-6df7-4da1-966d-c23188d55a86" />
+
+<img width="533" height="262" alt="image" src="https://github.com/user-attachments/assets/4ea033fd-7d4b-46b9-bd46-c4f21f264cdb" />
+
+<img width="690" height="180" alt="image" src="https://github.com/user-attachments/assets/717ef7a7-2ace-4caf-bdcc-5048f346ece7" />
+
+Hvis du svarer ja til å legge in dataen så settes in testverdiene, så ser tabelene sånn her ut.
+
+<img width="674" height="538" alt="image" src="https://github.com/user-attachments/assets/3f746b08-8e5b-4f2c-9778-10473be184b1" />
+
+Etter du har enten lagt inn dataen eller ikke, så hviser den deg menyen. Alternativene er strukturert sånn at den hviser navn først så tallet som hører til alternativet.
+
+<img width="1360" height="435" alt="image" src="https://github.com/user-attachments/assets/ffcecbe0-e36e-4a43-9d32-3ce1ad1c6b01" />
+
+
+
+
+Kode liste:
+
+musikkregister.py:
+
 ```python
 import dotenv
 import os
@@ -47,9 +74,10 @@ envhost = os.getenv("HOST")
 envuser = os.getenv("USER")
 envpassword = os.getenv("PASSWORD")
 envdatabase = os.getenv("DATABASE")
-envtables = os.getenv("TABLES")
-envtablecontent = os.getenv("TABLECONTENT")
+envtables = os.getenv("TABLES").split(",")
+envtablecontent = os.getenv("TABLECONTENT").split("|")
 defaulttable = os.getenv("DEFAULTTABLE")
+tested = os.getenv("TESTED")
 
 db = envdatabase
 
@@ -71,11 +99,15 @@ try:
     )
     print(f"Connected to {db} successfully!")
     mycursor = mydb.cursor()
-    functions.tablecheck(mycursor, db, envtables, envtablecontent, mydb)
-    functions.nummen()
+    functions.tablecheck(mycursor, envtables, envtablecontent)
+    functions.testinsert(mycursor, mydb, envtables, mariadb)
+    functions.nummen(mycursor, mydb)
 except mariadb.Error as e:
     print(f"Error connecting to MariaDB: {e}")
 ```
+
+
+functions.py:
 
 ```python
 import readchar
