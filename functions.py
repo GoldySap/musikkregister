@@ -254,6 +254,7 @@ def alter(mycursor, mydb, t):
             mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
             mydb.commit()
             print(f"Artist '{name}' renamed to '{new_name}'.")
+            break
     elif t.lower() == "song":
         song = input("Song name to modify: ").strip()
         mycursor.execute("SELECT id, songname, artistid FROM song WHERE songname = %s", (song,))
@@ -280,6 +281,7 @@ def alter(mycursor, mydb, t):
                     mydb.commit()
                     new_artist_id = mycursor.lastrowid
                     print(f"Created new artist '{new_artist_name}'")
+                    break
                 else:
                     print("Artist change cancelled.")
                     break
@@ -288,7 +290,7 @@ def alter(mycursor, mydb, t):
             mycursor.execute("UPDATE song SET artistid = %s WHERE id = %s", (new_artist_id, song_id))
             mydb.commit()
             print(f"Updated artist for song '{new_song_name or old_name}' → '{new_artist_name}'")
-        break
+            break
 
 def deletionhandler(mycursor, mydb, db):
   while True:
