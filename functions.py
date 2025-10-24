@@ -203,7 +203,7 @@ def spesifikk(mycursor, t):
                     dc.remove("id")
                   print("Categories:", dc)
                   c = input("Which category to search from: ")
-                  sql = "SELECT * FROM {t} WHERE {c} ='{o}'"
+                  sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
                   mycursor.execute(sql)
                   res = mycursor.fetchall()
                   for x in res:
