@@ -231,7 +231,7 @@ def alter(mycursor, mydb, t):
       dc.remove("id")
     print("Categories:", dc)
     c = input("Which category to search from: ")
-    sql = "SELECT * FROM {t} WHERE {c} ='{o}'"
+    sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
     mycursor.execute(sql)
     res = mycursor.fetchall()
     for x in res:
@@ -251,7 +251,7 @@ def alter(mycursor, mydb, t):
     dc = [cl[0] for cl in mycursor.description]
     an = input("What to change: ")
     na = input("New content values: ")
-    mycursor.execute(f"SELECT {t} FROM {t} WHERE id = %s", (an))
+    mycursor.execute(f"SELECT {an} FROM {t} WHERE id = %s", (an))
     og = mycursor.fetchone()
     sql = f"UPDATE {t} SET {t} = %s WHERE id = %s"
     mycursor.execute(sql, (na, an))
@@ -259,21 +259,155 @@ def alter(mycursor, mydb, t):
     mycursor.execute("UPDATE Music set Artist = %s WHERE Artist = %s", (an, og[0],))
     mydb.commit()
 
-def deletion(mycursor):
-    mycursor.execute("SET @count = 0;")
-    mycursor.execute("UPDATE Artists SET id = @count:=@count+1;")
-    mycursor.execute("ALTER TABLE Artists AUTO_INCREMENT = 1;") 
+def deletionhandler(mycursor, mydb, db):
+  while True:
+    print(
+            "\nDeletion Menu Options:"
+            "\nDelete specific data - 1"
+            "\nWipe all data (clear all tables) - 2"
+            "\nDelete database - 3"
+            "\nExit - 4"
+        )
+    allowed_keys = {1, 2, 3, 4}
+    key = int(readchar.readkey())
+    if key in allowed_keys:
+      match key:
+        case 1:
+          print(f"\nYou chose option: {key}\n")
+          mycursor.execute("SHOW TABLES")
+          tables = [x[0] for x in mycursor]
+          print("\nAvailable tables:")
+          for i, table in enumerate(tables):
+            print(f"{i + 1}. {table}")
+          t_choice = input("Select table number: ").strip()
+          if not t_choice.isdigit() or int(t_choice) not in range(1, len(tables) + 1):
+            print("Invalid table choice.")
+            return
+          t = tables[int(t_choice) - 1]
+          print(f"\nSelected table: {t}")
+          mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
+          columns = [col[0] for col in mycursor.description]
+          print("Available columns:", columns)
+          c = input("Which column to search by (e.g., 'id' or 'artistname'): ").strip()
+          if c not in columns:
+              print("Invalid column.")
+              return
+          v = input(f"Enter value for '{c}' to delete: ").strip()
+          if t.lower() == "artist":
+              mycursor.execute("SELECT id FROM artist WHERE artistname = %s OR id = %s", (v, v))
+              artist_data = mycursor.fetchone()
+              if not artist_data:
+                  print("Artist not found.")
+                  return
+              artist_id = artist_data[0]
+              mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (artist_id,))
+              song_count = mycursor.fetchone()[0]
+              if song_count > 0:
+                  print(f"\nArtist has {song_count} linked song(s).")
+                  print("Delete the artist AND all their songs - 1")
+                  print("Keep the songs but set their artist to 'Unknown' - 2")
+                  print("Cancel - 3")
+                  allowed_keys = {1, 2, 3}
+                  key = int(readchar.readkey())
+                  if key in allowed_keys:
+                    match key:
+                      case 1:
+                        mycursor.execute("DELETE FROM song WHERE artistid = %s", (artist_id,))
+                        mycursor.execute("DELETE FROM artist WHERE id = %s", (artist_id,))
+                        mydb.commit()
+                        print(f"Deleted artist and all linked songs.")
+                      case 2:
+                        mycursor.execute("SELECT id FROM artist WHERE artistname = 'Unknown'")
+                        unknown = mycursor.fetchone()
+                        if not unknown:
+                            mycursor.execute("INSERT INTO artist (artistname) VALUES ('Unknown')")
+                            mydb.commit()
+                            unknown_id = mycursor.lastrowid
+                            print("Created fallback artist: 'Unknown'")
+                        else:
+                            unknown_id = unknown[0]
+                        mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (unknown_id, artist_id))
+                        mycursor.execute("DELETE FROM artist WHERE id = %s", (artist_id,))
+                        mydb.commit()
+                        print("Reassigned songs to 'Unknown' and deleted artist.")
+                      case _:
+                        print("Action cancelled.")
+                        return
+              else:
+                  mycursor.execute("DELETE FROM artist WHERE id = %s OR artistname = %s", (v, v))
+                  mydb.commit()
+                  print(f"Artist '{v}' deleted successfully.")
+          elif t.lower() == "song":
+              mycursor.execute(f"SELECT id, songname FROM song WHERE {c} = %s", (v,))
+              song_data = mycursor.fetchone()
+              if not song_data:
+                  print("Song not found.")
+                  return
+              confirm = input(f"Are you sure you want to delete song '{song_data[1]}'? (y/n): ").lower()
+              if confirm == "y":
+                  mycursor.execute("DELETE FROM song WHERE id = %s", (song_data[0],))
+                  mydb.commit()
+                  print(f"Deleted song '{song_data[1]}'.")
+              else:
+                  print("Action cancelled.")
+          else:
+              confirm = input(f"Are you sure you want to delete from '{t}' where '{c}' = '{v}'? (y/n): ").lower()
+              if confirm == "y":
+                  sql = f"DELETE FROM {t} WHERE {c} = %s"
+                  mycursor.execute(sql, (v,))
+                  mydb.commit()
+                  print("Entry deleted successfully.")
+              else:
+                  print("Action cancelled.")
+        case 2:
+          print(f"\nYou chose option: {key}\n")
+          mycursor.execute("SHOW TABLES")
+          tables = [x[0] for x in mycursor]
+          print("\nAvailable tables:")
+          for i, table in enumerate(tables):
+              print(f"{i + 1}. {table}")
+          t_choice = input("Select table number to wipe: ").strip()
+          if not t_choice.isdigit() or int(t_choice) not in range(1, len(tables) + 1):
+              print("Invalid table choice.")
+              return
+          t = tables[int(t_choice) - 1]
+          confirm = input(f"Are you sure you want to DELETE ALL DATA from '{t}'? y/n: ").lower()
+          if confirm == "y":
+              mycursor.execute(f"DELETE FROM {t}")
+              mycursor.execute(f"ALTER TABLE {t} AUTO_INCREMENT = 1")
+              mydb.commit()
+              print(f"Data wiped from: '{t}'.")
+          else:
+              print("Wipe cancelled.")
+        case 3:
+              print(f"\nYou chose option: {key}\n")
+              inp = input("Delete database y/n: ").lower()
+              if inp == "y":
+                print("\nDeleting the databse will remove all data permanently, \nand will result in this file crashing due to losing connection.")
+                inp = input("Type DELETE to continue: ")
+                if inp == "DELETE":
+                  print("\nDeleting database...")
+                  mycursor.execute(f"DROP DATABASE {db}")
+                  mydb.commit()
+                  break
+        case 4:
+              print(f"\nYou chose option: {key}\n")
+              print("Exiting deletion menu...")
+              break
+    else:
+        print(f"\n{key} is not allowed. Try again.\n")
 
-def nummen(mycursor, mydb):
+def nummen(mycursor, mydb, db):
   while True:
       print(
           "\nMusicRegister Menu Options:" \
           "\nAdd content - 1" \
           "\nView content - 2" \
           "\nUpdate/alter content - 3" \
-          "\nExit - 4" 
+          "\nDeletion options - 4" \
+          "\nExit - 5" 
             )
-      allowed_keys = {1, 2, 3, 4}
+      allowed_keys = {1, 2, 3, 4, 5}
       key = int(readchar.readkey())
       if key in allowed_keys:
           match key:
@@ -286,9 +420,12 @@ def nummen(mycursor, mydb):
                   spesifikk(mycursor, t)
               case 3:
                   print(f"\nYou chose option: {key}\n")
-                  """ t = viewer()
-                  alter(mycursor, mydb, t) """
+                  t = viewer()
+                  alter(mycursor, mydb, t)
               case 4:
+                  deletionhandler(mycursor, mydb, db)
+                  break
+              case 5:
                   print(f"\nYou chose option: {key}\n")
                   break
       else:

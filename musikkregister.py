@@ -37,6 +37,6 @@ try:
     mycursor = mydb.cursor()
     functions.tablecheck(mycursor, envtables, envtablecontent)
     functions.testinsert(mycursor, mydb, envtables, mariadb)
-    functions.nummen(mycursor, mydb)
+    functions.nummen(mycursor, mydb, db)
 except mariadb.Error as e:
     print(f"Error connecting to MariaDB: {e}")
