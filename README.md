@@ -2,14 +2,14 @@
 
 ## Refleksjon og forklaring
 
----
-
 ### Reflesksjon
 
 I dette prosjektet ble vi testet i vår forståelse og kunskap innenfor databaser med mariadb, mysql.connector og koding med Python.
 Jeg syntes the var en interresang og vanskelig oppgave som lot meg utforske å lære mye om hvordan man kan automatisere databaser med kode.
 
 Det jeg angrer på mest er at jeg brukte litt lang tid på å kode systemet og tenkte ikke så mye på å ta bilder underveis. Når jeg skulle koble til raspberry pien hjem så fikk jeg en feilmelding og brukte tid på feilsøking. Årsaken til var forsellen mellom nskole og hjemme netverket. Ssh og mariadb brukeren krevde spesefikk ip for å skape en tilkobling. Dette løste jeg ved å gi raspberry pien en ny statisk ip for hjemme nettverket, legge til nye sikkerhets regler i branmuren og endret mariadb brukeren sin host til å akseptere alle iper.
+
+<img width="1604" height="455" alt="image" src="https://github.com/user-attachments/assets/3dcb2908-4611-4c6f-a75a-bd7bdd61e628" />
 
 ---
 
@@ -38,7 +38,7 @@ På oppstart av `musikkregister.py` filen så skal den skjekke om du kan koble t
 
 Hvis databasen ikke er tilgjengelig oppretter den databasen, så skjekke om tabellene er tilgjengelig og hvis ikke så lager den tabellene. Etter det så spør den om du vil legge til test verdiene som kan bare bli lagdt in hvis tabelene er tomme.
 
-<img width="1512" height="683" alt="image" src="https://github.com/user-attachments/assets/1401197a-de49-40f0-aa15-389371ef828d" />
+<img width="856" height="442" alt="image" src="https://github.com/user-attachments/assets/1401197a-de49-40f0-aa15-389371ef828d" />
 
 <img width="227" height="262" alt="image" src="https://github.com/user-attachments/assets/e5176dc2-6df7-4da1-966d-c23188d55a86" />
 
@@ -48,18 +48,33 @@ Hvis databasen ikke er tilgjengelig oppretter den databasen, så skjekke om tabe
 
 Hvis du svarer ja til å legge in dataen så settes in testverdiene, så ser tabelene sånn her ut.
 
-<img width="674" height="538" alt="image" src="https://github.com/user-attachments/assets/3f746b08-8e5b-4f2c-9778-10473be184b1" />
+<img width="337" height="269" alt="image" src="https://github.com/user-attachments/assets/3f746b08-8e5b-4f2c-9778-10473be184b1" />
 
 Etter du har svart på test spørsmålet og enten lagt inn dataen eller ikke, så hviser den deg menyen. Alternativene er strukturert sånn at den hviser navn først så tallet som hører til alternativet.
 
-<img width="1360" height="435" alt="image" src="https://github.com/user-attachments/assets/ffcecbe0-e36e-4a43-9d32-3ce1ad1c6b01" />
+<img width="680" height="217" alt="image" src="https://github.com/user-attachments/assets/ffcecbe0-e36e-4a43-9d32-3ce1ad1c6b01" />
 
-Alternative 1 i menyen er å sette in data i databasen og fungerer som følgende:
+Insert
+---
+
+Viewing
+---
+
+Updating/altering
+---
+
+Deletion
+---
+<img width="444" height="312" alt="image" src="https://github.com/user-attachments/assets/bf548bed-f45e-4320-903a-7f4b59cfaa39" />
+
+Exiting
+---
+<img width="1557" height="764" alt="image" src="https://github.com/user-attachments/assets/2de7b57f-58f9-4025-ad2a-aa06e3fe3b7e" />
 
 
 
 Kode liste:
-
+---
 musikkregister.py:
 
 ```python
