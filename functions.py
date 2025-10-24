@@ -40,7 +40,7 @@ def testinsert(mycursor, mydb, envtables, mariadb):
               ("the ink spots", "if i didn't care"),
             ]
   print("Test values:", val)
-  inp = input("Insert test values? y/n ")
+  inp = input("Insert test values? y/n ").lower()
   if inp.lower() != "y":
       print("Cancelled.")
       return
@@ -71,12 +71,12 @@ def testinsert(mycursor, mydb, envtables, mariadb):
       if song_count == 0:
           print("Inserting test songs...")
           mycursor.execute(f"SELECT id, artistname FROM {atable}")
-          artist_map = {name.lower(): artist_id for artist_id, name in mycursor.fetchall()}
+          artist_map = {name.lower(): aid for aid, name in mycursor.fetchall()}
           sints = []
           for artistname, songname in val:
-              artist_id = artist_map.get(artistname.lower())
-              if artist_id:
-                  sints.append((songname, artist_id))
+              aid = artist_map.get(artistname.lower())
+              if aid:
+                  sints.append((songname, aid))
               else:
                   print(f"Warning: Artist '{artistname}' not found, skipping song '{songname}'")
           if sints:
@@ -94,55 +94,51 @@ def insert(mycursor, mydb):
     temp = [x[0] for x in mycursor]
     while True:
         vs = []
-        print("\nAvalible tables:")
+        print("Avalible tables:")
         for i, string in enumerate(temp):
             print(f"{string} - {i + 1}")
             vs.append((i + 1, string))
         key = readchar.readkey()
         if key.isdigit():
-            key = int(key)
-            for number, string in vs:
-                if key == number:
-                    t = string.lower()
-                    print(f"\nSelected tabel: {t}")
-                    if t == "artist":
-                        count = int(input("How many artist to add: "))
-                        for _ in range(count):
-                            aname = input("Artistname: ")
-                            mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
-                            res = mycursor.fetchone()
-                            if res:
-                                print(f"Artist: '{aname}' already exist.")
-                            else:
-                                mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
-                                mydb.commit()
-                                print(f"Artist '{aname}' added.")
-                    elif t == "song":
-                        count = int(input("How many song to add: "))
-                        for _ in range(count):
-                            sname = input("Songname: ")
-                            aname = input("Artistname: ")
-                            mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
-                            res = mycursor.fetchone()
-                            if res:
-                                aid = res[0]
-                            else:
-                                mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
-                                mydb.commit()
-                                aid = mycursor.lastrowid
-                                print(f"Artist '{aname}' added automatically.")
-                            mycursor.execute(
-                                "INSERT INTO song (songname, artistid) VALUES (%s, %s)",
-                                (sname, aid)
-                            )
-                            mydb.commit()
-                            print(f"Song: '{sname}', added with artist: '{aname}'.")
-                    else:
-                        print("Unkown tabel.")
-                    return
-            print(f"'{key}' is not allowed. Try again.")
+          key = int(key)
+          for number, string in vs:
+            if key == number:
+              t = string.lower()
+              print(f"\nSelected tabel: {t}")
+              if t == "artist":
+                  count = int(input("How many artist to add: "))
+                  for _ in range(count):
+                      aname = input("Artistname: ")
+                      mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
+                      res = mycursor.fetchone()
+                      if res:
+                          print(f"Artist: '{aname}' already exist.")
+                      else:
+                          mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
+                          mydb.commit()
+                          print(f"Artist '{aname}' added.")
+              elif t == "song":
+                  count = int(input("How many song to add: "))
+                  for _ in range(count):
+                      sname = input("Songname: ").lower()
+                      aname = input("Artistname: ").lower()
+                      mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
+                      res = mycursor.fetchone()
+                      if res:
+                          aid = res[0]
+                      else:
+                          mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
+                          mydb.commit()
+                          aid = mycursor.lastrowid
+                          print(f"Artist '{aname}' added automatically.")
+                      mycursor.execute(
+                          "INSERT INTO song (songname, artistid) VALUES (%s, %s)",
+                          (sname, aid)
+                      )
+                      mydb.commit()
+                      print(f"Song: '{sname}', added with artist: '{aname}'.")
         else:
-            print(f"'{key}' is not allowed. Try again.")
+          print(f"'{key}' is not allowed. Try again.")
 
 def viewer(mycursor):
     mycursor.execute("SHOW TABLES")
@@ -159,8 +155,8 @@ def viewer(mycursor):
           for number, string in vs:
             if key == number:
               return string
-        else:
-            print(f"{key} is not allowed. Try again:")
+            else:
+              print(f"{key} is not allowed. Try again:")
 
 def spesifikk(mycursor, t):
   while True:
@@ -170,94 +166,152 @@ def spesifikk(mycursor, t):
       "\nSearch category content - 2" \
       "\nSearch spesifikk content - 3"
         )
-      allowed_keys = {1, 2, 3}
-      key = int(readchar.readkey())
-      if key in allowed_keys:
-          match key:
-              case 1:
-                  print(f"\nYou chose option: {key}\n")
-                  mycursor.execute(f"SELECT * FROM {t}")
-                  res = mycursor.fetchall()
-                  for x in res:
+      key = readchar.readkey()
+      if key.isdigit():
+        key = int(key)
+        match key:
+          case 1:
+              print(f"\nYou chose option: {key}\n")
+              mycursor.execute(f"SELECT * FROM {t}")
+              res = mycursor.fetchall()
+              for x in res:
+                print(x)
+              break
+          case 2:
+              print(f"\nYou chose option: {key}\n")
+              mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
+              dc = [cl[0] for cl in mycursor.description]
+              if "id" in dc:
+                dc.remove("id")
+              print("Categories:", dc)
+              c = input("Which category to search from: ")
+              sql = f"SELECT {c} FROM {t};"
+              mycursor.execute(sql)
+              res = mycursor.fetchall()
+              for x in res:
+                print(x)
+              break
+          case 3:
+              print(f"\nYou chose option: {key}\n")
+              mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
+              dc = [cl[0] for cl in mycursor.description]
+              if "id" in dc:
+                dc.remove("id")
+              print("Categories:", dc)
+              c = input("Which category to search from: ")
+              sql = f"SELECT {c} FROM {t};"
+              mycursor.execute(sql)
+              res = mycursor.fetchall()
+              for x in res:
+                print(x)
+              o = input("What to search for in the category: ")
+              if any(o.lower() == str(x[0]).lower() for x in res):
+                sql = f"SELECT * FROM {t} WHERE {c} = %s"
+                mycursor.execute(sql, (o,))
+                res = mycursor.fetchall()
+                for x in res:
+                    if t == "song":
+                      sql = """
+                          SELECT song.id, song.songname, artist.artistname 
+                          FROM song 
+                          JOIN artist ON song.artistid = artist.id
+                      """
+                      mycursor.execute(sql)
+                      mycursor.fetchall()
+                      for row in mycursor.fetchall():
+                        print(x, ", Linked to:", row[2])
                     print(x)
-                  break
-              case 2:
-                  print(f"\nYou chose option: {key}\n")
-                  mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
-                  dc = [cl[0] for cl in mycursor.description]
-                  if "id" in dc:
-                    dc.remove("id")
-                  print("Categories:", dc)
-                  c = input("Which category to search from: ")
-                  sql = f"SELECT {c} FROM {t};"
-                  mycursor.execute(sql)
-                  res = mycursor.fetchall()
-                  for x in res:
-                    print(x)
-                  break
-              case 3:
-                  print(f"\nYou chose option: {key}\n")
-                  mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
-                  dc = [cl[0] for cl in mycursor.description]
-                  if "id" in dc:
-                    dc.remove("id")
-                  print("Categories:", dc)
-                  c = input("Which category to search from: ")
-                  sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
-                  mycursor.execute(sql)
-                  res = mycursor.fetchall()
-                  for x in res:
-                    print(x)
-                  cres = list({row["artist"] for row in t})
-                  print("artists:", cres)
-                  o = input("What to search for in the category: ")
-                  if c.lower in dc:
-                    sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
-                    mycursor.execute(sql)
-                    res = mycursor.fetchall()
-                    for x in res:
-                        print(x)
-                  else:
-                    print("Invalid search category.")
-                    spesifikk(t)
-                  break
+              else:
+                print("Invalid search. Try again.")
+          case _:
+            print(f"\n{key} is not allowed. Try again.\n")
       else:
         print(f"\n{key} is not allowed. Try again.\n")
 
 def alter(mycursor, mydb, t):
-    mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
-    dc = [cl[0] for cl in mycursor.description]
-    if "id" in dc:
-      dc.remove("id")
-    print("Categories:", dc)
-    c = input("Which category to search from: ")
-    sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
-    mycursor.execute(sql)
-    res = mycursor.fetchall()
-    for x in res:
-      print(x)
-    cres = list({row["artist"] for row in t})
-    print("artists:", cres)
-    o = input("What to search for in the category: ")
-    if c.lower in dc:
-      sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
-      mycursor.execute(sql)
-      res = mycursor.fetchall()
-      for x in res:
-          print(x)
-    sql = f"UPDATE {t} SET address = %s WHERE address = %s"
-    val = []
-    mycursor.execute(sql, val)
-    dc = [cl[0] for cl in mycursor.description]
-    an = input("What to change: ")
-    na = input("New content values: ")
-    mycursor.execute(f"SELECT {an} FROM {t} WHERE id = %s", (an))
-    og = mycursor.fetchone()
-    sql = f"UPDATE {t} SET {t} = %s WHERE id = %s"
-    mycursor.execute(sql, (na, an))
-    mydb.commit()
-    mycursor.execute("UPDATE Music set Artist = %s WHERE Artist = %s", (an, og[0],))
-    mydb.commit()
+  while True:
+    if t.lower() == "artist":
+        name = input("Enter artist name to modify: ").strip()
+        mycursor.execute("SELECT id, artistname FROM artist WHERE artistname = %s", (name,))
+        artist = mycursor.fetchone()
+        if not artist:
+            print("Artist not found.")
+        artist_id = artist[0]
+        new_name = input("New artist name: ").strip()
+        mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (artist_id,))
+        linked_songs = mycursor.fetchone()[0]
+        if linked_songs > 0:
+            print(f"\nArtist '{name}' has {linked_songs} linked song(s).")
+            print("Rename artist and delete songs. - 1")
+            print("Rename artist, make a duplicate of the old artist and reassign songs. - 2")
+            print("Cancel. - 3")
+            key = readchar.readkey()
+            if key.isdigit():
+              key = int(key)
+              match key:
+                case 1:
+                    mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
+                    mydb.commit()
+                    print(f"Renamed artist '{name}' → '{new_name}'")
+                case 2:
+                    mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (artist,))
+                    mydb.commit()
+                    aid = mycursor.lastrowid
+                    mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (aid, artist_id))
+                    mydb.commit()
+                    mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
+                    mydb.commit()
+                    print(f"Created new artist '{new_name}' and reassigned all songs.")
+                case _:
+                    print("Cancelled.")
+                    return
+        else:
+            mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
+            mydb.commit()
+            print(f"Artist '{name}' renamed to '{new_name}'.")
+    elif t.lower() == "song":
+        song = input("Song name to modify: ").strip()
+        mycursor.execute("SELECT id, songname, artistid FROM song WHERE songname = %s", (song,))
+        sdata = mycursor.fetchone()
+        if not sdata:
+            print("Song not found.")
+            return
+        song_id, old_name, artist_id = sdata
+        print(f"Editing song: {old_name}")
+        new_song_name = input("Enter new song name (or press Enter to keep current): ").strip()
+        new_artist_name = input("Enter new artist name (or press Enter to keep current): ").strip()
+        if new_song_name:
+            mycursor.execute("UPDATE song SET songname = %s WHERE id = %s", (new_song_name, song_id))
+            mydb.commit()
+            print(f"Song renamed to '{new_song_name}'")
+        if new_artist_name:
+            mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (new_artist_name,))
+            artist = mycursor.fetchone()
+            if not artist:
+                print(f"Artist '{new_artist_name}' not found.")
+                create = input("Create this artist? (y/n): ").strip().lower()
+                if create == "y":
+                    mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (new_artist_name,))
+                    mydb.commit()
+                    new_artist_id = mycursor.lastrowid
+                    print(f"Created new artist '{new_artist_name}'")
+                else:
+                    print("Artist change cancelled.")
+                    return
+            else:
+                new_artist_id = artist[0]
+            mycursor.execute("UPDATE song SET artistid = %s WHERE id = %s", (new_artist_id, song_id))
+            mydb.commit()
+            print(f"Updated artist for song '{new_song_name or old_name}' → '{new_artist_name}'")
+    else:
+        print("Generic alter mode.")
+        column = input("Column to change: ")
+        old_val = input("Current value: ")
+        new_val = input("New value: ")
+        sql = f"UPDATE {t} SET {column} = %s WHERE {column} = %s"
+        mycursor.execute(sql, (new_val, old_val))
+        mydb.commit()
+        print("Value updated successfully.")
 
 def deletionhandler(mycursor, mydb, db):
   while True:
@@ -268,9 +322,9 @@ def deletionhandler(mycursor, mydb, db):
             "\nDelete database - 3"
             "\nExit - 4"
         )
-    allowed_keys = {1, 2, 3, 4}
-    key = int(readchar.readkey())
-    if key in allowed_keys:
+    key = readchar.readkey()
+    if key.isdigit():
+      key = int(key)
       match key:
         case 1:
           print(f"\nYou chose option: {key}\n")
@@ -299,21 +353,21 @@ def deletionhandler(mycursor, mydb, db):
               if not artist_data:
                   print("Artist not found.")
                   return
-              artist_id = artist_data[0]
-              mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (artist_id,))
+              aid = artist_data[0]
+              mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (aid,))
               song_count = mycursor.fetchone()[0]
               if song_count > 0:
                   print(f"\nArtist has {song_count} linked song(s).")
                   print("Delete the artist AND all their songs - 1")
                   print("Keep the songs but set their artist to 'Unknown' - 2")
                   print("Cancel - 3")
-                  allowed_keys = {1, 2, 3}
-                  key = int(readchar.readkey())
-                  if key in allowed_keys:
+                  key = readchar.readkey()
+                  if key.isdigit():
+                    key = int(key)
                     match key:
                       case 1:
-                        mycursor.execute("DELETE FROM song WHERE artistid = %s", (artist_id,))
-                        mycursor.execute("DELETE FROM artist WHERE id = %s", (artist_id,))
+                        mycursor.execute("DELETE FROM song WHERE artistid = %s", (aid,))
+                        mycursor.execute("DELETE FROM artist WHERE id = %s", (aid,))
                         mydb.commit()
                         print(f"Deleted artist and all linked songs.")
                       case 2:
@@ -326,8 +380,8 @@ def deletionhandler(mycursor, mydb, db):
                             print("Created fallback artist: 'Unknown'")
                         else:
                             unknown_id = unknown[0]
-                        mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (unknown_id, artist_id))
-                        mycursor.execute("DELETE FROM artist WHERE id = %s", (artist_id,))
+                        mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (unknown_id, aid))
+                        mycursor.execute("DELETE FROM artist WHERE id = %s", (aid,))
                         mydb.commit()
                         print("Reassigned songs to 'Unknown' and deleted artist.")
                       case _:
@@ -383,7 +437,7 @@ def deletionhandler(mycursor, mydb, db):
               print(f"\nYou chose option: {key}\n")
               inp = input("Delete database y/n: ").lower()
               if inp == "y":
-                print("\nDeleting the databse will remove all data permanently, \nand will result in this file crashing due to losing connection.")
+                print("\nDeleting the databse will remove all data permanently, \nand will result in this file closing due to the database's disappearance.")
                 inp = input("Type DELETE to continue: ")
                 if inp == "DELETE":
                   print("\nDeleting database...")
@@ -393,7 +447,10 @@ def deletionhandler(mycursor, mydb, db):
         case 4:
               print(f"\nYou chose option: {key}\n")
               print("Exiting deletion menu...")
+              mydb.close()
               break
+        case _:
+          print(f"\n{key} is not allowed. Try again.\n")
     else:
         print(f"\n{key} is not allowed. Try again.\n")
 
@@ -401,32 +458,35 @@ def nummen(mycursor, mydb, db):
   while True:
       print(
           "\nMusicRegister Menu Options:" \
+          "\nWrite the corresponding number to a action to select it." \
           "\nAdd content - 1" \
           "\nView content - 2" \
           "\nUpdate/alter content - 3" \
           "\nDeletion options - 4" \
           "\nExit - 5" 
             )
-      allowed_keys = {1, 2, 3, 4, 5}
-      key = int(readchar.readkey())
-      if key in allowed_keys:
-          match key:
-              case 1:
-                  print(f"\nYou chose option: {key}\n")
-                  insert(mycursor, mydb)
-              case 2:
-                  print(f"\nYou chose option: {key}\n")
-                  t = viewer(mycursor)
-                  spesifikk(mycursor, t)
-              case 3:
-                  print(f"\nYou chose option: {key}\n")
-                  t = viewer()
-                  alter(mycursor, mydb, t)
-              case 4:
-                  deletionhandler(mycursor, mydb, db)
-                  break
-              case 5:
-                  print(f"\nYou chose option: {key}\n")
-                  break
+      key = readchar.readkey()
+      if key.isdigit():
+        key = int(key)
+        match key:
+            case 1:
+                print(f"\nYou chose option: {key}\n")
+                insert(mycursor, mydb)
+            case 2:
+                print(f"\nYou chose option: {key}\n")
+                t = viewer(mycursor)
+                spesifikk(mycursor, t)
+            case 3:
+                print(f"\nYou chose option: {key}\n")
+                t = viewer()
+                alter(mycursor, mydb, t)
+            case 4:
+                deletionhandler(mycursor, mydb, db)
+                break
+            case 5:
+                print(f"\nYou chose option: {key}\n")
+                break
+            case _:
+              print(f"\n{key} is not allowed. Try again.\n")
       else:
           print(f"\n{key} is not allowed. Try again.\n")
