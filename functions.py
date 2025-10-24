@@ -196,7 +196,6 @@ def spesifikk(mycursor, t):
                 res = mycursor.fetchall()
                 for x in res:
                   print(f"{x}")
-
               else:
                 print("Invalid search. Try again.")
           case _:
@@ -207,8 +206,14 @@ def spesifikk(mycursor, t):
 def alter(mycursor, mydb, t):
   while True:
     if t.lower() == "artist":
+        c = "artistname"
+        sql = f"SELECT {c} FROM {t};"
+        mycursor.execute(sql)
+        res = mycursor.fetchall()
+        for x in res:
+          print(x)
         name = input("Artist name to modify: ").strip()
-        mycursor.execute("SELECT id, artistname FROM artist WHERE artistname = %s", (name,))
+        mycursor.execute(f"SELECT id, {c} FROM {t} WHERE artistname = %s", (name,))
         artist = mycursor.fetchone()
         if not artist:
             print("Artist not found.")
@@ -227,9 +232,11 @@ def alter(mycursor, mydb, t):
               key = int(key)
               match key:
                 case 1:
+                    mycursor.execute("DELETE FROM song WHERE artistid = %s", (artist_id,))
                     mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
                     mydb.commit()
-                    print(f"Renamed artist '{name}' → '{new_name}'")
+                    print(f"Renamed artist '{name}' to '{new_name}'")
+                    break
                 case 2:
                     mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (artist,))
                     mydb.commit()
@@ -239,9 +246,10 @@ def alter(mycursor, mydb, t):
                     mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
                     mydb.commit()
                     print(f"Created new artist '{new_name}' and reassigned all songs.")
+                    break
                 case _:
                     print("Cancelled.")
-                    return
+                    break
         else:
             mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
             mydb.commit()
@@ -252,7 +260,7 @@ def alter(mycursor, mydb, t):
         sdata = mycursor.fetchone()
         if not sdata:
             print("Song not found.")
-            return
+            break
         song_id, old_name, artist_id = sdata
         print(f"Editing song: {old_name}")
         new_song_name = input("Enter new song name (or press Enter to keep current): ").strip()
@@ -274,21 +282,13 @@ def alter(mycursor, mydb, t):
                     print(f"Created new artist '{new_artist_name}'")
                 else:
                     print("Artist change cancelled.")
-                    return
+                    break
             else:
                 new_artist_id = artist[0]
             mycursor.execute("UPDATE song SET artistid = %s WHERE id = %s", (new_artist_id, song_id))
             mydb.commit()
             print(f"Updated artist for song '{new_song_name or old_name}' → '{new_artist_name}'")
-    else:
-        print("Generic alter mode.")
-        column = input("Column to change: ")
-        old_val = input("Current value: ")
-        new_val = input("New value: ")
-        sql = f"UPDATE {t} SET {column} = %s WHERE {column} = %s"
-        mycursor.execute(sql, (new_val, old_val))
-        mydb.commit()
-        print("Value updated successfully.")
+        break
 
 def deletionhandler(mycursor, mydb, db):
   while True:
@@ -342,7 +342,7 @@ def deletionhandler(mycursor, mydb, db):
                         mycursor.execute("DELETE FROM song WHERE artistid = %s", (aid,))
                         mycursor.execute("DELETE FROM artist WHERE id = %s", (aid,))
                         mydb.commit()
-                        print(f"Deleted artist and all linked songs.")
+                        print(f"Artist and linked songs deleted.")
                       case 2:
                         mycursor.execute("SELECT id FROM artist WHERE artistname = 'Unknown'")
                         unknown = mycursor.fetchone()
