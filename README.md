@@ -6,6 +6,7 @@
 
 I dette prosjektet ble vi testet i vår forståelse og kunskap innenfor databaser med mariadb, mysql.connector og koding med Python.
 Jeg syntes the var en interresang og vanskelig oppgave som lot meg utforske å lære mye om hvordan man kan automatisere databaser med kode.
+Det er fortsatt mye jeg ønsker at jeg hadde fått fullført og endret, som hvordan stukturen er, noen av alternativene, kanskje skrive ut artist navnet sammen med sangen nå man skal se på det i programmet, men desvere blir det til nestegang.
 
 Det jeg angrer på mest er at jeg brukte litt lang tid på å kode systemet og tenkte ikke så mye på å ta bilder underveis. Når jeg skulle koble til raspberry pien hjem så fikk jeg en feilmelding og brukte tid på feilsøking. Årsaken til var forsellen mellom nskole og hjemme netverket. Ssh og mariadb brukeren krevde spesefikk ip for å skape en tilkobling. Dette løste jeg ved å gi raspberry pien en ny statisk ip for hjemme nettverket, legge til nye sikkerhets regler i branmuren og endret mariadb brukeren sin host til å akseptere alle iper.
 
@@ -56,20 +57,61 @@ Etter du har svart på test spørsmålet og enten lagt inn dataen eller ikke, s�
 
 Insert
 ---
+"Add content" så spør den deg først om hvilken tabel du vill legge dataen til, så spør den deg om hvor mange ting du vil legge til. For eksempel hvis du valgte tabellen song. Så kommer den til å spøre deg om sang navn og artist for antall ganger du har sagt at du vil legge til data.
+
+<img width="284" height="281" alt="image" src="https://github.com/user-attachments/assets/0387c102-9c0d-483b-b4a9-2eead5852faf" />
+<img width="326" height="281" alt="image" src="https://github.com/user-attachments/assets/0ed0c5e0-892e-474b-bbf1-98a00023d536" />
+<img width="501" height="281" alt="image" src="https://github.com/user-attachments/assets/45241aa5-d793-446a-bd23-4b7f89b4e2bc" />
+<img width="486" height="281" alt="image" src="https://github.com/user-attachments/assets/345fee0d-a129-4630-bb86-865615f97e34" />
+
+Systemmet can også skjekke om for eksempel artisten du prøver å legge til i tabelen allerede ligger i tabellen.
+
+<img width="328" height="281" alt="image" src="https://github.com/user-attachments/assets/f88b2d25-bd9c-4f9d-8d36-e027fc2dcb7e" />
+
 
 Viewing
 ---
+"View content" så spør den deg først om velge en tabel og så gir deg 3 valg. 
+
+Det første valg er "View all content" som hviser all dataen som ligger i tabellen.
+
+<img width="649" height="690" alt="image" src="https://github.com/user-attachments/assets/2b80ccc6-9e7b-4a32-bf33-f197528c580d" />
+
+Andre valget heter "Search category content" og lar deg se alt innen for en spesifikk kategori/kolonne.
+
+<img width="661" height="729" alt="image" src="https://github.com/user-attachments/assets/b1f57725-417d-4983-aa7d-7f07fd3225c1" />
+
+Tredje valget er "Search spesifikk content" som lar deg søke etter en spesefikk rad innenfor en spesefikk kolonne.
+
+<img width="661" height="776" alt="image" src="https://github.com/user-attachments/assets/96906893-79b6-48bc-b707-1d8f2d58a0da" />
+
 
 Updating/altering
 ---
 
 Deletion
 ---
+"Deletion options" gir deg 3 forskjellige alternativer for å slette data.
+
+1. "Delete specific data" lar deg søke etter en spesefikk rad, lignende hvordan man søker med "View content" alternativet, og så sletter det. Denne skjekker også hva du sletter og justerer stukturen. Hvis jeg sletter en artist med flere sanger så kan jeg enten slette artisten og alle sangene samtidig, eller slette artisten og gjøre artisten til sangene usjent.
+
+<img width="704" height="309" alt="image" src="https://github.com/user-attachments/assets/32efcb84-6bb4-44f7-8bcf-992ebb5c8ad4" />
+<img width="687" height="341" alt="image" src="https://github.com/user-attachments/assets/d0c1c5df-5ab7-4358-a5c1-ff3990ef5686" />
+
+2. "Wipe all data (clear all tables)" sletter all dataen fra tabelene og nullstiller idene.
+
+<img width="754" height="555" alt="image" src="https://github.com/user-attachments/assets/5df87b84-6e6b-449e-8511-e98bf7f90d24" />
+
+
+3. "Delete database" fjerner databasen, som fjerner alle tabelene og all dataen inni databasen. Så til slutt stenger programmet.
+
 <img width="444" height="312" alt="image" src="https://github.com/user-attachments/assets/bf548bed-f45e-4320-903a-7f4b59cfaa39" />
 
 Exiting
 ---
-<img width="1557" height="764" alt="image" src="https://github.com/user-attachments/assets/2de7b57f-58f9-4025-ad2a-aa06e3fe3b7e" />
+Hvis du velger "Exit" så lokker den programmet.
+
+<img width="778" height="382" alt="image" src="https://github.com/user-attachments/assets/2de7b57f-58f9-4025-ad2a-aa06e3fe3b7e" />
 
 
 
