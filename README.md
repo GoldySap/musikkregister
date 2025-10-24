@@ -6,7 +6,7 @@
 
 I dette prosjektet ble vi testet i vår forståelse og kunskap innenfor databaser med mariadb, mysql.connector og koding med Python.
 Jeg syntes the var en interresang og vanskelig oppgave som lot meg utforske å lære mye om hvordan man kan automatisere databaser med kode.
-Det er fortsatt mye jeg ønsker at jeg hadde fått fullført og endret, som hvordan stukturen er, noen av alternativene, kanskje skrive ut artist navnet sammen med sangen nå man skal se på det i programmet, men desvere blir det til nestegang.
+Det er fortsatt mye jeg ønsker at jeg hadde fått fullført og endret, som hvordan stukturen er, noen av alternativene, kanskje skrive ut artist navnet sammen med sangen nå man skal se på det i programmet, fikse update/alter duplikatetet som blir rart for en eller annen grunn, men desvere blir det til nestegang.
 
 Det jeg angrer på mest er at jeg brukte litt lang tid på å kode systemet og tenkte ikke så mye på å ta bilder underveis. Når jeg skulle koble til raspberry pien hjem så fikk jeg en feilmelding og brukte tid på feilsøking. Årsaken til var forsellen mellom nskole og hjemme netverket. Ssh og mariadb brukeren krevde spesefikk ip for å skape en tilkobling. Dette løste jeg ved å gi raspberry pien en ny statisk ip for hjemme nettverket, legge til nye sikkerhets regler i branmuren og endret mariadb brukeren sin host til å akseptere alle iper.
 
@@ -19,6 +19,8 @@ Det jeg angrer på mest er at jeg brukte litt lang tid på å kode systemet og t
 I denne forklaringen rekker jeg ikke dekket alt av hva koden min gjør, men listen av den fulle koden er på bunnen av dokumentet.
 
 Prosjektet var å lage en database, automatisere opprettelsen av tabeller og gi brukeren en meny som kan utføre forskjellige ting. Med menyen skal brukeren kunne legge til data i tabelene, se dataen, endre på existerende data og slette data.
+
+Hovedfilene er musikkregister.py og functions.py, archive.py er et arkive der jeg har min test og gammel kode
 
 For å lage koden som kunne oppnå alt dette på en enkel måte brukte jeg disse nødvendige bibliotekene:
 
@@ -191,7 +193,6 @@ selected = 0
 tablename = ""
 tablecontent = ""
 tablecont = []
-val = []
 
 def dbcheck(mycursor, db):
     mycursor.execute("SHOW DATABASES")
@@ -203,84 +204,114 @@ def dbcheck(mycursor, db):
       temp.append(db)
     print(f"Database created: {db}")
 
-def tablecheck(mycursor, db, envtables, envtablecontent, mydb):
+def tablecheck(mycursor, envtables, envtablecontent):
     mycursor.execute("SHOW TABLES")
     temp = [x[0] for x in mycursor]
-    print("Current tables:", temp, "\nDesired tables:", db)
-    if db not in temp:
-        print("Tables not found. \nCreating Tables...")
-        for i, string in enumerate(envtables):
-          x = string
-          y = envtablecontent[i]
-        mycursor.execute(f"CREATE TABLE {x} {y}")
-        mycursor.execute(f"CREATE TABLE {x} {y}")
-        print("Tables created.")
-    print(f"Tables for {mydb.database}:", temp)
+    print("Current tables:", temp, "\nDesired tables:", envtables)
+    for i, tablename in enumerate(envtables):
+      con = envtablecontent[i]
+      if tablename not in temp:
+          print(f"Table '{tablename}' not found. Creating table...")
+          try:
+              mycursor.execute(f"CREATE TABLE {tablename} {con}")
+              print(f"Table '{tablename}' created successfully.")
+          except Exception as e:
+              print(f"Error creating table '{tablename}': {e}")
+      else:
+          print(f"Table '{tablename}' already exists.")
+    print("All desired tables present.")
 
 def testinsert(mycursor, mydb, envtables, mariadb):
   val = [
-              ("", ""),
-              ("", ""),
-              ("", ""),
+              ("acdc", "high way to hell"),
+              ("the ink spots", "we'll meet again"),
+              ("the ink spots", "if i didn't care"),
             ]
   print("Test values:", val)
-  inp = input("Insert test values? y/n ")
-  if inp.lower() == "y":
-      try:
-          query = f"SELECT COUNT(*) FROM {envtables}"
-          mycursor.execute(query)
-          row_count = mycursor.fetchone()[0]
-          mycursor.execute(f"SELECT * FROM {envtables} LIMIT 0")
-          dc = [cl[0] for cl in mycursor.description]
-          if "id" in dc:
-            dc.remove("id")
-          toval = ", ".join(["%s"] * len(dc))
-          todc = ", ".join(dc)
-          if row_count <= 0:
-            print(tablecont)
-            testsql = f"INSERT INTO {envtables} ({todc}) VALUES ({toval})"
-            mycursor.executemany(testsql, testval)
-            mydb.commit()
-            print(mycursor.rowcount, "was inserted.")
-      except mariadb.Error as e:
-          print(f"Error connecting to MariaDB: {e}")
+  inp = input("Insert test values? y/n ").lower()
+  if inp.lower() != "y":
+      print("Cancelled.")
+      return
+  try:
+      atable = None
+      stable = None
+      for t in envtables:
+          if "artist" in t.lower():
+              atable = t
+          elif "song" in t.lower():
+              stable = t
+      if not atable or not stable:
+          print("Error: Could not find 'artist' or 'song' table in envtables.")
+          return
+      mycursor.execute(f"SELECT COUNT(*) FROM {atable}")
+      artist_count = mycursor.fetchone()[0]
+      if artist_count == 0:
+          print("Inserting test artists...")
+          unique_artists = list({artist for artist, _ in val})
+          artist_inserts = [(artist,) for artist in unique_artists]
+          mycursor.executemany(f"INSERT INTO {atable} (artistname) VALUES (%s)", artist_inserts)
+          mydb.commit()
+          print(f"{mycursor.rowcount} artists inserted.")
+      else:
+          print("Artists already exist, skipping artist insert.")
+      mycursor.execute(f"SELECT COUNT(*) FROM {stable}")
+      song_count = mycursor.fetchone()[0]
+      if song_count == 0:
+          print("Inserting test songs...")
+          mycursor.execute(f"SELECT id, artistname FROM {atable}")
+          artist_map = {name.lower(): aid for aid, name in mycursor.fetchall()}
+          sints = []
+          for artistname, songname in val:
+              aid = artist_map.get(artistname.lower())
+              if aid:
+                  sints.append((songname, aid))
+              else:
+                  print(f"Warning: Artist '{artistname}' not found, skipping song '{songname}'")
+          if sints:
+              mycursor.executemany(f"INSERT INTO {stable} (songname, artistid) VALUES (%s, %s)", sints)
+              mydb.commit()
+              print(f"{mycursor.rowcount} songs inserted.")
+      else:
+          print("Songs already exist, skipping song insert.")
+      print("Test insert completed successfully.")
+  except mariadb.Error as e:
+      print(f"Error connecting to MariaDB: {e}")
 
 def insert(mycursor, mydb):
-    mycursor.execute("SHOW TABLES")
-    temp = [x[0] for x in mycursor]
-    vs = []
-    while True:
-        print("Avalible tables:", temp)
-        for i, string in enumerate(temp):
-          print(f"{string} - {i + 1}")
-          vs.append((i + 1, string))
-        key = readchar.readkey()
-        for number, string in vs:
-          if key == number:
-            print(f"You chose option: {key}")
-            t = string
-            ti = 0
-            mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
-            dc = [cl[0] for cl in mycursor.description]
-            if "id" in dc:
-              dc.remove("id")
-            toval = ", ".join(["%s"] * len(dc))
-            todc = ", ".join(dc)
-            sql = f"INSERT INTO {t} ({todc}) VALUES ({toval})"
-            count = int(input("How many inserts: "))
-            for i in range(count):
-                ti = ti + 1
-                print("\nCurrent insert:", i + 1)
-                a = str(input("Song name: "))
-                b = str(input("Artist name: "))
-                val.append((a, b))
-            print(val)
-            if val:
-              mycursor.executemany(sql, val)
+    t = tselector(mycursor)
+    print(f"\nSelected tabel: {t}")
+    if t == "artist":
+        count = int(input("How many artist to add: "))
+        for _ in range(count):
+          aname = input("Artistname: ").lower()
+          mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
+          res = mycursor.fetchone()
+          if res:
+              print(f"Artist: '{aname}' already exist.")
+          else:
+              mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
               mydb.commit()
-            print("Total inserts:", ti, "added successfully")
-        else:
-            print(f"{key} is not allowed. Try again:")
+              print(f"Artist '{aname}' added.")
+    elif t == "song":
+        count = int(input("How many song to add: "))
+        for _ in range(count):
+          sname = input("Songname: ").lower()
+          aname = input("Artistname: ").lower()
+          mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
+          res = mycursor.fetchone()
+          if res:
+              aid = res[0]
+          else:
+              mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
+              mydb.commit()
+              aid = mycursor.lastrowid
+              print(f"Artist '{aname}' added automatically.")
+          mycursor.execute(
+              "INSERT INTO song (songname, artistid) VALUES (%s, %s)",
+              (sname, aid)
+          )
+          mydb.commit()
+          print(f"Song: '{sname}', added with artist: '{aname}'.")
 
 def tselector(mycursor):
     mycursor.execute("SHOW TABLES")
@@ -292,62 +323,331 @@ def tselector(mycursor):
           print(f"{string} - {i + 1}")
           vs.append((i + 1, string))
         key = readchar.readkey()
-        for number, string in vs:
-          if key == number:
-            return string
-        else:
-            print(f"{key} is not allowed. Try again:")
+        if key.isdigit():
+          key = int(key)
+          for number, string in vs:
+            if key == int(number):
+              return string
+            else:
+              print(f"Invalid {key}. Try again:")
 
 def spesifikk(mycursor, t):
-    inp = input("View all content? y/n ")
-    if inp.lower() == "y":
-      mycursor.execute(f"SELECT * FROM {t}")
-      for x in mycursor:
-        print(x)
-    else:
-      mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
-      dc = [cl[0] for cl in mycursor.description]
-      print("Categories:", dc)
-      c = input("Which category to search from: ")
-      sql = "SELECT * FROM {t} WHERE {c} ='{o}'"
-      mycursor.execute(sql)
-      res = mycursor.fetchall()
-      for x in res:
-        print(x)
-      cres = list({row["artist"] for row in t})
-      print("artists:", cres)
-      o = input("What to search for int the category: ")
-      if c.lower in dc:
-         sql = f"SELECT * FROM {t} WHERE {c} ='{o}'"
-         mycursor.execute(sql)
-         res = mycursor.fetchall()
-         for x in res:
-            print(x)
+  while True:
+      print(
+      "\nSearch Options:" \
+      "\nView all content - 1" \
+      "\nSearch category content - 2" \
+      "\nSearch spesifikk content - 3"
+        )
+      key = readchar.readkey()
+      if key.isdigit():
+        key = int(key)
+        match key:
+          case 1:
+              print(f"\nYou chose option: {key}\n")
+              mycursor.execute(f"SELECT * FROM {t}")
+              res = mycursor.fetchall()
+              for x in res:
+                print(x)
+              break
+          case 2:
+              print(f"\nYou chose option: {key}\n")
+              mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
+              dc = [cl[0] for cl in mycursor.description]
+              if "id" in dc:
+                dc.remove("id")
+              print("Categories:", dc)
+              c = input("Which category to search from: ")
+              sql = f"SELECT {c} FROM {t};"
+              mycursor.execute(sql)
+              res = mycursor.fetchall()
+              for x in res:
+                print(x)
+              break
+          case 3:
+              print(f"\nYou chose option: {key}\n")
+              mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
+              dc = [cl[0] for cl in mycursor.description]
+              if "id" in dc:
+                dc.remove("id")
+              print("Categories:", dc)
+              c = input("Which category to search from: ")
+              sql = f"SELECT {c} FROM {t};"
+              mycursor.execute(sql)
+              res = mycursor.fetchall()
+              for x in res:
+                print(x)
+              o = input("What to search for in the category: ")
+              if any(o.lower() == str(x[0]).lower() for x in res):
+                sql = f"SELECT * FROM {t} WHERE {c} = %s"
+                mycursor.execute(sql, (o,))
+                res = mycursor.fetchall()
+                for x in res:
+                  print(f"{x}")
+              else:
+                print("Invalid search. Try again.")
+          case _:
+            print(f"\n{key} is not allowed. Try again.\n")
       else:
-         print("Invalid search category.")
-         spesifikk(t)
+        print(f"\n{key} is not allowed. Try again.\n")
 
-def nummen():
-    while True:
-        print(
-            "MusicRegister Menu Options:" \
-            "Add content - 1" \
-            "View content - 2" \
-            "Exit - 3" 
-              )
-        allowed_keys = {1, 2, 3}
-        key = int(readchar.readkey())
-        if key in allowed_keys:
-            match key:
+def alter(mycursor, mydb, t):
+  while True:
+    if t.lower() == "artist":
+        c = "artistname"
+        sql = f"SELECT {c} FROM {t};"
+        mycursor.execute(sql)
+        res = mycursor.fetchall()
+        for x in res:
+          print(x)
+        name = input("Artist name to modify: ").strip()
+        mycursor.execute(f"SELECT id, {c} FROM {t} WHERE artistname = %s", (name,))
+        artist = mycursor.fetchone()
+        if not artist:
+            print("Artist not found.")
+        artist_id = artist[0]
+        new_name = input("New artist name: ").strip()
+        mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (artist_id,))
+        linked_songs = mycursor.fetchone()[0]
+        if linked_songs > 0:
+            print(f"\nArtist '{name}' has {linked_songs} linked song(s)." \
+                  "\nRename artist and delete songs. - 1" \
+                  "\nRename artist, make a duplicate of the old artist and reassign songs. - 2" \
+                  "\nCancel. - 3"
+                  )
+            key = readchar.readkey()
+            if key.isdigit():
+              key = int(key)
+              match key:
                 case 1:
-                    print(f"You chose option: {key}")
+                    mycursor.execute("DELETE FROM song WHERE artistid = %s", (artist_id,))
+                    mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
+                    mydb.commit()
+                    print(f"Renamed artist '{name}' to '{new_name}'")
+                    break
                 case 2:
-                    print(f"You chose option: {key}")
-                    t = tselector()
-                    spesifikk(t)
-                case 3:
-                    print(f"You chose option: {key}")
+                    mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (artist,))
+                    mydb.commit()
+                    aid = mycursor.lastrowid
+                    mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (aid, artist_id))
+                    mydb.commit()
+                    mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
+                    mydb.commit()
+                    print(f"Created new artist '{new_name}' and reassigned all songs.")
+                    break
+                case _:
+                    print("Cancelled.")
                     break
         else:
-            print(f"{key} is not allowed. Try again:")
+            mycursor.execute("UPDATE artist SET artistname = %s WHERE id = %s", (new_name, artist_id))
+            mydb.commit()
+            print(f"Artist '{name}' renamed to '{new_name}'.")
+            break
+    elif t.lower() == "song":
+        song = input("Song name to modify: ").strip()
+        mycursor.execute("SELECT id, songname, artistid FROM song WHERE songname = %s", (song,))
+        sdata = mycursor.fetchone()
+        if not sdata:
+            print("Song not found.")
+            break
+        song_id, old_name, artist_id = sdata
+        print(f"Editing song: {old_name}")
+        new_song_name = input("Enter new song name (or press Enter to keep current): ").strip()
+        new_artist_name = input("Enter new artist name (or press Enter to keep current): ").strip()
+        if new_song_name:
+            mycursor.execute("UPDATE song SET songname = %s WHERE id = %s", (new_song_name, song_id))
+            mydb.commit()
+            print(f"Song renamed to '{new_song_name}'")
+        if new_artist_name:
+            mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (new_artist_name,))
+            artist = mycursor.fetchone()
+            if not artist:
+                print(f"Artist '{new_artist_name}' not found.")
+                create = input("Create this artist? (y/n): ").strip().lower()
+                if create == "y":
+                    mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (new_artist_name,))
+                    mydb.commit()
+                    new_artist_id = mycursor.lastrowid
+                    print(f"Created new artist '{new_artist_name}'")
+                    break
+                else:
+                    print("Artist change cancelled.")
+                    break
+            else:
+                new_artist_id = artist[0]
+            mycursor.execute("UPDATE song SET artistid = %s WHERE id = %s", (new_artist_id, song_id))
+            mydb.commit()
+            print(f"Updated artist for song '{new_song_name or old_name}' → '{new_artist_name}'")
+            break
+
+def deletionhandler(mycursor, mydb, db):
+  while True:
+    print(
+            "\nDeletion Menu Options:" \
+            "\nDelete specific data - 1" \
+            "\nWipe all data (clear all tables) - 2" \
+            "\nDelete database - 3" \
+            "\nExit - 4"
+        )
+    key = readchar.readkey()
+    if key.isdigit():
+      key = int(key)
+      match key:
+        case 1:
+          print(f"\nYou chose option: {key}\n")
+          t = tselector(mycursor)
+          print(f"\nSelected table: {t}")
+          mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
+          dc = [cl[0] for cl in mycursor.description]
+          if "id" in dc:
+            dc.remove("id")
+          print("Categories:", dc)
+          c = input("Which category to search from: ")
+          sql = f"SELECT {c} FROM {t};"
+          mycursor.execute(sql)
+          res = mycursor.fetchall()
+          for x in res:
+            print(x)
+          v = input(f"Value for '{c}' to delete: ").strip()
+          if t.lower() == "artist":
+              mycursor.execute("SELECT id FROM artist WHERE artistname = %s OR id = %s", (v, v))
+              artist_data = mycursor.fetchone()
+              if not artist_data:
+                  print("Artist not found.")
+                  return
+              aid = artist_data[0]
+              mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (aid,))
+              song_count = mycursor.fetchone()[0]
+              if song_count > 0:
+                  print(f"\nArtist has {song_count} linked song(s)." \
+                        "\nDelete the artist AND all their songs - 1" \
+                        "\nKeep the songs but set their artist to 'Unknown' - 2" \
+                        "\nCancel - 3"
+                        )
+                  key = readchar.readkey()
+                  if key.isdigit():
+                    key = int(key)
+                    match key:
+                      case 1:
+                        mycursor.execute("DELETE FROM song WHERE artistid = %s", (aid,))
+                        mycursor.execute("DELETE FROM artist WHERE id = %s", (aid,))
+                        mydb.commit()
+                        print(f"Artist and linked songs deleted.")
+                      case 2:
+                        mycursor.execute("SELECT id FROM artist WHERE artistname = 'Unknown'")
+                        unknown = mycursor.fetchone()
+                        if not unknown:
+                            mycursor.execute("INSERT INTO artist (artistname) VALUES ('Unknown')")
+                            mydb.commit()
+                            uid = mycursor.lastrowid
+                            print("Created fallback artist: 'Unknown'")
+                        else:
+                            uid = unknown[0]
+                        mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (uid, aid))
+                        mycursor.execute("DELETE FROM artist WHERE id = %s", (aid,))
+                        mydb.commit()
+                        print("Reassigned songs to 'Unknown' and deleted artist.")
+                      case _:
+                        print("Action cancelled.")
+                        break
+              else:
+                  mycursor.execute("DELETE FROM artist WHERE id = %s OR artistname = %s", (v, v))
+                  mydb.commit()
+                  print(f"Artist '{v}' deleted successfully.")
+          elif t.lower() == "song":
+              mycursor.execute(f"SELECT id, songname FROM song WHERE {c} = %s", (v,))
+              sd = mycursor.fetchone()
+              if not sd:
+                  print("Song not found.")
+                  return
+              confirm = input(f"Are you sure you want to delete song '{sd[1]}'? (y/n): ").lower()
+              if confirm == "y":
+                  mycursor.execute("DELETE FROM song WHERE id = %s", (sd[0],))
+                  mydb.commit()
+                  print(f"Deleted song '{sd[1]}'.")
+              else:
+                  print("Action cancelled.")
+          else:
+              confirm = input(f"Are you sure you want to delete from '{t}' where '{c}' = '{v}'? (y/n): ").lower()
+              if confirm == "y":
+                  sql = f"DELETE FROM {t} WHERE {c} = %s"
+                  mycursor.execute(sql, (v,))
+                  mydb.commit()
+                  print("Entry deleted successfully.")
+                  break
+              else:
+                  print("Action cancelled.")
+        case 2:
+          print(f"\nYou chose option: {key}\n")
+          mycursor.execute("SHOW TABLES")
+          tables = [x[0] for x in mycursor]
+          confirm = input(f"Are you sure you want to DELETE ALL TABLE DATA PERMANENTLY? y/n: ").lower()
+          if confirm == "y":
+            for i, t in enumerate(reversed(tables)):
+              print(f"Wiping data from {t}...")
+              mycursor.execute(f"DELETE FROM {t}")
+              mycursor.execute(f"ALTER TABLE {t} AUTO_INCREMENT = 1")
+              mydb.commit()
+              print(f"Data wiped from: '{t}'.")
+            break
+          else:
+              print("Wipe cancelled.")
+        case 3:
+              print(f"\nYou chose option: {key}\n")
+              inp = input("Delete database y/n: ").lower()
+              if inp == "y":
+                print("\nDeleting the databse will remove all data permanently, \nand will result in this file closing due to the database's disappearance.")
+                inp = input("Type DELETE to continue: ")
+                if inp == "DELETE":
+                  print("\nDeleting database...")
+                  mycursor.execute(f"DROP DATABASE {db}")
+                  mydb.commit()
+                  break
+        case 4:
+              print(f"\nYou chose option: {key}\n")
+              print("Exiting deletion menu...")
+              mydb.close()
+              break
+        case _:
+          print(f"\n{key} is not allowed. Try again.\n")
+    else:
+        print(f"\n{key} is not allowed. Try again.\n")
+
+def nummen(mycursor, mydb, db):
+  while True:
+      print(
+          "\nMusicRegister Menu Options:" \
+          "\nWrite the corresponding number to a action to select it." \
+          "\nAdd content - 1" \
+          "\nView content - 2" \
+          "\nUpdate/alter content - 3" \
+          "\nDeletion options - 4" \
+          "\nExit - 5" 
+            )
+      key = readchar.readkey()
+      if key.isdigit():
+        key = int(key)
+        match key:
+            case 1:
+                print(f"\nYou chose option: {key}\n")
+                insert(mycursor, mydb)
+            case 2:
+                print(f"\nYou chose option: {key}\n")
+                t = tselector(mycursor)
+                spesifikk(mycursor, t)
+            case 3:
+                print(f"\nYou chose option: {key}\n")
+                t = tselector(mycursor)
+                alter(mycursor, mydb, t)
+            case 4:
+                deletionhandler(mycursor, mydb, db)
+                break
+            case 5:
+                print(f"\nYou chose option: {key}\n")
+                print("Exiting programm...")
+                break
+            case _:
+              print(f"\n{key} is not allowed. Try again.\n")
+      else:
+          print(f"\n{key} is not allowed. Try again.\n")
 ```
