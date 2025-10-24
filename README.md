@@ -39,9 +39,7 @@ Kommando for installasjonen av bibliotekene som brukes i bash terminalen:
 `pip install Readchar`
 
 
-På oppstart av `musikkregister.py` filen så skal den skjekke om du kan koble til mariadb og skjekke om databasen er tilgjengelig. 
-
-Hvis databasen ikke er tilgjengelig oppretter den databasen, så skjekke om tabellene er tilgjengelig og hvis ikke så lager den tabellene. Etter det så spør den om du vil legge til test verdiene som kan bare bli lagdt in hvis tabelene er tomme.
+På oppstart av `musikkregister.py` filen så skal den skjekke om du kan koble til mariadb og skjekke om databasen er tilgjengelig.For inloggingsdetaljene brukte jeg en .env fil og har exludert den fra dette repositoriet med en .gitignore file for sikkerhet. Hvis databasen ikke er tilgjengelig oppretter den databasen, så skjekke om tabellene er tilgjengelig og hvis ikke så lager den tabellene. Etter det så spør den om du vil legge til test verdiene som kan bare bli lagdt in hvis tabelene er tomme.
 
 <img width="856" height="442" alt="image" src="https://github.com/user-attachments/assets/1401197a-de49-40f0-aa15-389371ef828d" />
 
