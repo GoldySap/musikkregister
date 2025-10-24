@@ -16,6 +16,8 @@ Det jeg angrer på mest er at jeg brukte litt lang tid på å kode systemet og t
 
 ### Forklaring
 
+I denne forklaringen rekker jeg ikke dekket alt av hva koden min gjør, men listen av den fulle koden er på bunnen av dokumentet.
+
 Prosjektet var å lage en database, automatisere opprettelsen av tabeller og gi brukeren en meny som kan utføre forskjellige ting. Med menyen skal brukeren kunne legge til data i tabelene, se dataen, endre på existerende data og slette data.
 
 For å lage koden som kunne oppnå alt dette på en enkel måte brukte jeg disse nødvendige bibliotekene:
@@ -88,6 +90,20 @@ Tredje valget er "Search spesifikk content" som lar deg søke etter en spesefikk
 
 Updating/altering
 ---
+"Update/alter content" lar deg velge tabel, så navnet på hva du vil endre, også det nye navnet den skal ha. Den skjekker også om for eksempel om en artist du skal endre har noen sanger som trenger artisten, og hvis det er noen sanger så spør den deg om hvordan du vil håndtere det.
+
+Første alternative er å bytte navn på artisten og slette alle sangene artisten hadde.
+
+<img width="848" height="619" alt="image" src="https://github.com/user-attachments/assets/421b006d-a7af-4767-afc6-9b8fe6c3cff5" />
+<img width="690" height="503" alt="image" src="https://github.com/user-attachments/assets/2dd3b9d9-213b-4707-b792-8cc99cc3d741" />
+
+Andre alternativ er å endre navnet på artisten, men lage en duplikat av det gammle navnet som brukes til å lage en ny rad med data og kobles til sangene av den artisten. 
+Det gjenstår bare et lite problem som er at når duplikaten skapes så leges den til så (2, artistnavn) istedenfor å bare ha artist navnet.
+
+<img width="853" height="624" alt="image" src="https://github.com/user-attachments/assets/b8af1980-7be9-4388-8a30-23f080915858" />
+
+<img width="694" height="556" alt="image" src="https://github.com/user-attachments/assets/b2dd5d42-28e6-4e28-8627-305d451c7fd1" />
+
 
 Deletion
 ---
