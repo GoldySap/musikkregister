@@ -90,57 +90,42 @@ def testinsert(mycursor, mydb, envtables, mariadb):
       print(f"Error connecting to MariaDB: {e}")
 
 def insert(mycursor, mydb):
-    mycursor.execute("SHOW TABLES")
-    temp = [x[0] for x in mycursor]
-    while True:
-        vs = []
-        print("Avalible tables:")
-        for i, string in enumerate(temp):
-            print(f"{string} - {i + 1}")
-            vs.append((i + 1, string))
-        key = readchar.readkey()
-        if key.isdigit():
-          key = int(key)
-          for number, string in vs:
-            if key == number:
-              t = string.lower()
-              print(f"\nSelected tabel: {t}")
-              if t == "artist":
-                  count = int(input("How many artist to add: "))
-                  for _ in range(count):
-                      aname = input("Artistname: ")
-                      mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
-                      res = mycursor.fetchone()
-                      if res:
-                          print(f"Artist: '{aname}' already exist.")
-                      else:
-                          mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
-                          mydb.commit()
-                          print(f"Artist '{aname}' added.")
-              elif t == "song":
-                  count = int(input("How many song to add: "))
-                  for _ in range(count):
-                      sname = input("Songname: ").lower()
-                      aname = input("Artistname: ").lower()
-                      mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
-                      res = mycursor.fetchone()
-                      if res:
-                          aid = res[0]
-                      else:
-                          mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
-                          mydb.commit()
-                          aid = mycursor.lastrowid
-                          print(f"Artist '{aname}' added automatically.")
-                      mycursor.execute(
-                          "INSERT INTO song (songname, artistid) VALUES (%s, %s)",
-                          (sname, aid)
-                      )
-                      mydb.commit()
-                      print(f"Song: '{sname}', added with artist: '{aname}'.")
-        else:
-          print(f"'{key}' is not allowed. Try again.")
+    t = tselector(mycursor)
+    print(f"\nSelected tabel: {t}")
+    if t == "artist":
+        count = int(input("How many artist to add: "))
+        for _ in range(count):
+          aname = input("Artistname: ").lower()
+          mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
+          res = mycursor.fetchone()
+          if res:
+              print(f"Artist: '{aname}' already exist.")
+          else:
+              mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
+              mydb.commit()
+              print(f"Artist '{aname}' added.")
+    elif t == "song":
+        count = int(input("How many song to add: "))
+        for _ in range(count):
+          sname = input("Songname: ").lower()
+          aname = input("Artistname: ").lower()
+          mycursor.execute("SELECT id FROM artist WHERE artistname = %s", (aname,))
+          res = mycursor.fetchone()
+          if res:
+              aid = res[0]
+          else:
+              mycursor.execute("INSERT INTO artist (artistname) VALUES (%s)", (aname,))
+              mydb.commit()
+              aid = mycursor.lastrowid
+              print(f"Artist '{aname}' added automatically.")
+          mycursor.execute(
+              "INSERT INTO song (songname, artistid) VALUES (%s, %s)",
+              (sname, aid)
+          )
+          mydb.commit()
+          print(f"Song: '{sname}', added with artist: '{aname}'.")
 
-def viewer(mycursor):
+def tselector(mycursor):
     mycursor.execute("SHOW TABLES")
     temp = [x[0] for x in mycursor]
     vs = []
@@ -153,10 +138,10 @@ def viewer(mycursor):
         if key.isdigit():
           key = int(key)
           for number, string in vs:
-            if key == number:
+            if key == int(number):
               return string
             else:
-              print(f"{key} is not allowed. Try again:")
+              print(f"Invalid {key}. Try again:")
 
 def spesifikk(mycursor, t):
   while True:
@@ -210,17 +195,8 @@ def spesifikk(mycursor, t):
                 mycursor.execute(sql, (o,))
                 res = mycursor.fetchall()
                 for x in res:
-                    if t == "song":
-                      sql = """
-                          SELECT song.id, song.songname, artist.artistname 
-                          FROM song 
-                          JOIN artist ON song.artistid = artist.id
-                      """
-                      mycursor.execute(sql)
-                      mycursor.fetchall()
-                      for row in mycursor.fetchall():
-                        print(x, ", Linked to:", row[2])
-                    print(x)
+                  print(f"{x}")
+
               else:
                 print("Invalid search. Try again.")
           case _:
@@ -231,7 +207,7 @@ def spesifikk(mycursor, t):
 def alter(mycursor, mydb, t):
   while True:
     if t.lower() == "artist":
-        name = input("Enter artist name to modify: ").strip()
+        name = input("Artist name to modify: ").strip()
         mycursor.execute("SELECT id, artistname FROM artist WHERE artistname = %s", (name,))
         artist = mycursor.fetchone()
         if not artist:
@@ -241,10 +217,11 @@ def alter(mycursor, mydb, t):
         mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (artist_id,))
         linked_songs = mycursor.fetchone()[0]
         if linked_songs > 0:
-            print(f"\nArtist '{name}' has {linked_songs} linked song(s).")
-            print("Rename artist and delete songs. - 1")
-            print("Rename artist, make a duplicate of the old artist and reassign songs. - 2")
-            print("Cancel. - 3")
+            print(f"\nArtist '{name}' has {linked_songs} linked song(s)." \
+                  "\nRename artist and delete songs. - 1" \
+                  "\nRename artist, make a duplicate of the old artist and reassign songs. - 2" \
+                  "\nCancel. - 3"
+                  )
             key = readchar.readkey()
             if key.isdigit():
               key = int(key)
@@ -316,10 +293,10 @@ def alter(mycursor, mydb, t):
 def deletionhandler(mycursor, mydb, db):
   while True:
     print(
-            "\nDeletion Menu Options:"
-            "\nDelete specific data - 1"
-            "\nWipe all data (clear all tables) - 2"
-            "\nDelete database - 3"
+            "\nDeletion Menu Options:" \
+            "\nDelete specific data - 1" \
+            "\nWipe all data (clear all tables) - 2" \
+            "\nDelete database - 3" \
             "\nExit - 4"
         )
     key = readchar.readkey()
@@ -328,25 +305,20 @@ def deletionhandler(mycursor, mydb, db):
       match key:
         case 1:
           print(f"\nYou chose option: {key}\n")
-          mycursor.execute("SHOW TABLES")
-          tables = [x[0] for x in mycursor]
-          print("\nAvailable tables:")
-          for i, table in enumerate(tables):
-            print(f"{i + 1}. {table}")
-          t_choice = input("Select table number: ").strip()
-          if not t_choice.isdigit() or int(t_choice) not in range(1, len(tables) + 1):
-            print("Invalid table choice.")
-            return
-          t = tables[int(t_choice) - 1]
+          t = tselector(mycursor)
           print(f"\nSelected table: {t}")
           mycursor.execute(f"SELECT * FROM {t} LIMIT 0")
-          columns = [col[0] for col in mycursor.description]
-          print("Available columns:", columns)
-          c = input("Which column to search by (e.g., 'id' or 'artistname'): ").strip()
-          if c not in columns:
-              print("Invalid column.")
-              return
-          v = input(f"Enter value for '{c}' to delete: ").strip()
+          dc = [cl[0] for cl in mycursor.description]
+          if "id" in dc:
+            dc.remove("id")
+          print("Categories:", dc)
+          c = input("Which category to search from: ")
+          sql = f"SELECT {c} FROM {t};"
+          mycursor.execute(sql)
+          res = mycursor.fetchall()
+          for x in res:
+            print(x)
+          v = input(f"Value for '{c}' to delete: ").strip()
           if t.lower() == "artist":
               mycursor.execute("SELECT id FROM artist WHERE artistname = %s OR id = %s", (v, v))
               artist_data = mycursor.fetchone()
@@ -357,10 +329,11 @@ def deletionhandler(mycursor, mydb, db):
               mycursor.execute("SELECT COUNT(*) FROM song WHERE artistid = %s", (aid,))
               song_count = mycursor.fetchone()[0]
               if song_count > 0:
-                  print(f"\nArtist has {song_count} linked song(s).")
-                  print("Delete the artist AND all their songs - 1")
-                  print("Keep the songs but set their artist to 'Unknown' - 2")
-                  print("Cancel - 3")
+                  print(f"\nArtist has {song_count} linked song(s)." \
+                        "\nDelete the artist AND all their songs - 1" \
+                        "\nKeep the songs but set their artist to 'Unknown' - 2" \
+                        "\nCancel - 3"
+                        )
                   key = readchar.readkey()
                   if key.isdigit():
                     key = int(key)
@@ -376,32 +349,32 @@ def deletionhandler(mycursor, mydb, db):
                         if not unknown:
                             mycursor.execute("INSERT INTO artist (artistname) VALUES ('Unknown')")
                             mydb.commit()
-                            unknown_id = mycursor.lastrowid
+                            uid = mycursor.lastrowid
                             print("Created fallback artist: 'Unknown'")
                         else:
-                            unknown_id = unknown[0]
-                        mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (unknown_id, aid))
+                            uid = unknown[0]
+                        mycursor.execute("UPDATE song SET artistid = %s WHERE artistid = %s", (uid, aid))
                         mycursor.execute("DELETE FROM artist WHERE id = %s", (aid,))
                         mydb.commit()
                         print("Reassigned songs to 'Unknown' and deleted artist.")
                       case _:
                         print("Action cancelled.")
-                        return
+                        break
               else:
                   mycursor.execute("DELETE FROM artist WHERE id = %s OR artistname = %s", (v, v))
                   mydb.commit()
                   print(f"Artist '{v}' deleted successfully.")
           elif t.lower() == "song":
               mycursor.execute(f"SELECT id, songname FROM song WHERE {c} = %s", (v,))
-              song_data = mycursor.fetchone()
-              if not song_data:
+              sd = mycursor.fetchone()
+              if not sd:
                   print("Song not found.")
                   return
-              confirm = input(f"Are you sure you want to delete song '{song_data[1]}'? (y/n): ").lower()
+              confirm = input(f"Are you sure you want to delete song '{sd[1]}'? (y/n): ").lower()
               if confirm == "y":
-                  mycursor.execute("DELETE FROM song WHERE id = %s", (song_data[0],))
+                  mycursor.execute("DELETE FROM song WHERE id = %s", (sd[0],))
                   mydb.commit()
-                  print(f"Deleted song '{song_data[1]}'.")
+                  print(f"Deleted song '{sd[1]}'.")
               else:
                   print("Action cancelled.")
           else:
@@ -411,26 +384,22 @@ def deletionhandler(mycursor, mydb, db):
                   mycursor.execute(sql, (v,))
                   mydb.commit()
                   print("Entry deleted successfully.")
+                  break
               else:
                   print("Action cancelled.")
         case 2:
           print(f"\nYou chose option: {key}\n")
           mycursor.execute("SHOW TABLES")
           tables = [x[0] for x in mycursor]
-          print("\nAvailable tables:")
-          for i, table in enumerate(tables):
-              print(f"{i + 1}. {table}")
-          t_choice = input("Select table number to wipe: ").strip()
-          if not t_choice.isdigit() or int(t_choice) not in range(1, len(tables) + 1):
-              print("Invalid table choice.")
-              return
-          t = tables[int(t_choice) - 1]
-          confirm = input(f"Are you sure you want to DELETE ALL DATA from '{t}'? y/n: ").lower()
+          confirm = input(f"Are you sure you want to DELETE ALL TABLE DATA PERMANENTLY? y/n: ").lower()
           if confirm == "y":
+            for i, t in enumerate(reversed(tables)):
+              print(f"Wiping data from {t}...")
               mycursor.execute(f"DELETE FROM {t}")
               mycursor.execute(f"ALTER TABLE {t} AUTO_INCREMENT = 1")
               mydb.commit()
               print(f"Data wiped from: '{t}'.")
+            break
           else:
               print("Wipe cancelled.")
         case 3:
@@ -474,17 +443,18 @@ def nummen(mycursor, mydb, db):
                 insert(mycursor, mydb)
             case 2:
                 print(f"\nYou chose option: {key}\n")
-                t = viewer(mycursor)
+                t = tselector(mycursor)
                 spesifikk(mycursor, t)
             case 3:
                 print(f"\nYou chose option: {key}\n")
-                t = viewer()
+                t = tselector(mycursor)
                 alter(mycursor, mydb, t)
             case 4:
                 deletionhandler(mycursor, mydb, db)
                 break
             case 5:
                 print(f"\nYou chose option: {key}\n")
+                print("Exiting programm...")
                 break
             case _:
               print(f"\n{key} is not allowed. Try again.\n")

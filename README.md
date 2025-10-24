@@ -224,7 +224,7 @@ def insert(mycursor, mydb):
         else:
             print(f"{key} is not allowed. Try again:")
 
-def viewer(mycursor):
+def tselector(mycursor):
     mycursor.execute("SHOW TABLES")
     temp = [x[0] for x in mycursor]
     vs = []
@@ -285,7 +285,7 @@ def nummen():
                     print(f"You chose option: {key}")
                 case 2:
                     print(f"You chose option: {key}")
-                    t = viewer()
+                    t = tselector()
                     spesifikk(t)
                 case 3:
                     print(f"You chose option: {key}")
